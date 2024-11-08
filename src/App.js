@@ -1,30 +1,23 @@
 import React from 'react';
-import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useAuth } from './hooks/useAuth';
+
 import SignUp from './components/SignUp';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
-import { auth } from './api/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 
 const App = () => {
-  const [user, setUser] = React.useState(null);
+  const { user } = useAuth(); // Custom hook para manejar el estado de autenticación
 
-  React.useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-
-    return () => unsubscribe();
-  }, []);
+  const PrivateRoute = ({ element, redirectTo }) => {
+    return user ? element : <Navigate to={redirectTo} replace />;
+  };
 
   return (
     <Router>
       <Routes>
-        <Route
-          path="/dashboard"
-          element={user ? <Dashboard /> : <Navigate to="/login" replace />}
-        />
-        <Route path="/signup" element={<SignUp />} />
+        <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} redirectTo="/login" />} />
+        <Route path="/signup" element={user ? <Navigate to="/dashboard" replace /> : <SignUp />} />
         <Route path="/login" element={user ? <Navigate to="/dashboard" replace /> : <Login />} />
         <Route path="/" element={<Navigate to={user ? "/dashboard" : "/login"} replace />} />
       </Routes>
